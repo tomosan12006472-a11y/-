@@ -133,7 +133,11 @@ function stats(items){
     avgJump:avg('maxJump'),
     maxJump:max('maxJump'),
     avgMoves:avg('moves'),
-    avgPath:avg('path')
+    avgPath:avg('path'),
+    avgRadiusX:avg('maxRadiusX'),
+    avgRadiusY:avg('maxRadiusY'),
+    maxRadiusX:max('maxRadiusX'),
+    maxRadiusY:max('maxRadiusY')
   };
 }
 function render(){
@@ -145,10 +149,12 @@ function render(){
     '<b>A/B比較</b><br>'+
     '正常: n='+a.n+' cancel='+a.cancel+
       ' / dur='+f(a.avgDur)+'ms / maxDisp平均='+f(a.avgDisp)+'px (最大 '+f(a.maxDisp)+')'+
-      ' / maxJump平均='+f(a.avgJump)+'px / moves='+f(a.avgMoves)+' / path='+f(a.avgPath)+'px<br>'+
+      ' / maxJump平均='+f(a.avgJump)+'px / moves='+f(a.avgMoves)+' / path='+f(a.avgPath)+'px'+
+      ' / radius平均='+f(a.avgRadiusX)+'×'+f(a.avgRadiusY)+'px (最大 '+f(a.maxRadiusX)+'×'+f(a.maxRadiusY)+')<br>'+
     '問題: n='+b.n+' cancel='+b.cancel+
       ' / dur='+f(b.avgDur)+'ms / maxDisp平均='+f(b.avgDisp)+'px (最大 '+f(b.maxDisp)+')'+
-      ' / maxJump平均='+f(b.avgJump)+'px / moves='+f(b.avgMoves)+' / path='+f(b.avgPath)+'px';
+      ' / maxJump平均='+f(b.avgJump)+'px / moves='+f(b.avgMoves)+' / path='+f(b.avgPath)+'px'+
+      ' / radius平均='+f(b.avgRadiusX)+'×'+f(b.avgRadiusY)+'px (最大 '+f(b.maxRadiusX)+'×'+f(b.maxRadiusY)+')';
 }
 function ctrl(t){return !!t.closest?.('#controls')}
 function selectGroup(g){
@@ -250,8 +256,8 @@ document.getElementById('copyBtn').addEventListener('click',async e=>{
   const recent=[...log.querySelectorAll('li')].slice(0,30).reverse().map(li=>li.textContent).join('\n');
   const text=
     'iPhone Touch Tester v2 result\n'+
-    'NORMAL n='+a.n+' cancel='+a.cancel+' avgDur='+f(a.avgDur)+'ms avgMaxDisp='+f(a.avgDisp)+'px maxMaxDisp='+f(a.maxDisp)+'px avgMaxJump='+f(a.avgJump)+'px maxMaxJump='+f(a.maxJump)+'px avgMoves='+f(a.avgMoves)+' avgPath='+f(a.avgPath)+'px\n'+
-    'PROBLEM n='+b.n+' cancel='+b.cancel+' avgDur='+f(b.avgDur)+'ms avgMaxDisp='+f(b.avgDisp)+'px maxMaxDisp='+f(b.maxDisp)+'px avgMaxJump='+f(b.avgJump)+'px maxMaxJump='+f(b.maxJump)+'px avgMoves='+f(b.avgMoves)+' avgPath='+f(b.avgPath)+'px\n\nRecent events:\n'+recent;
+    'NORMAL n='+a.n+' cancel='+a.cancel+' avgDur='+f(a.avgDur)+'ms avgMaxDisp='+f(a.avgDisp)+'px maxMaxDisp='+f(a.maxDisp)+'px avgMaxJump='+f(a.avgJump)+'px maxMaxJump='+f(a.maxJump)+'px avgMoves='+f(a.avgMoves)+' avgPath='+f(a.avgPath)+'px avgRadius='+f(a.avgRadiusX)+'x'+f(a.avgRadiusY)+'px\n'+
+    'PROBLEM n='+b.n+' cancel='+b.cancel+' avgDur='+f(b.avgDur)+'ms avgMaxDisp='+f(b.avgDisp)+'px maxMaxDisp='+f(b.maxDisp)+'px avgMaxJump='+f(b.avgJump)+'px maxMaxJump='+f(b.maxJump)+'px avgMoves='+f(b.avgMoves)+' avgPath='+f(b.avgPath)+'px avgRadius='+f(b.avgRadiusX)+'x'+f(b.avgRadiusY)+'px\n\nRecent events:\n'+recent;
   try{
     await navigator.clipboard.writeText(text);
     live.textContent='結果をクリップボードへコピーしました';
