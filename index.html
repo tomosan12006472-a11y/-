@@ -14,19 +14,21 @@ body{background:
 linear-gradient(to right,rgba(255,255,255,.055) 1px,transparent 1px),
 linear-gradient(to bottom,rgba(255,255,255,.055) 1px,transparent 1px),#090b10;
 background-size:32px 32px}
-.panel{background:rgba(12,14,20,.84);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:12px}
+.panel{background:rgba(12,14,20,.86);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:12px}
 #head{position:fixed;z-index:100;top:max(8px,env(safe-area-inset-top));left:8px;right:8px;display:flex;justify-content:space-between;gap:8px;pointer-events:none}
-#info{padding:8px 10px;max-width:min(520px,72vw);font-size:11px;line-height:1.35}
+#info{padding:8px 10px;max-width:min(560px,68vw);font-size:10px;line-height:1.35}
 #info strong{font-size:13px}
-#controls{display:flex;gap:6px;pointer-events:auto}
-button{appearance:none;border:1px solid rgba(255,255,255,.18);color:white;background:rgba(20,23,30,.94);border-radius:10px;padding:9px 11px;font-size:11px;font-weight:700}
-#status{position:fixed;z-index:90;top:max(82px,calc(env(safe-area-inset-top) + 74px));right:8px;width:min(450px,50vw);max-height:52vh;overflow:auto;padding:8px;pointer-events:none}
-#summary{font-variant-numeric:tabular-nums;font-size:11px;line-height:1.45;margin-bottom:5px}
-#log{margin:0;padding:0;list-style:none;font:10px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace}
+#controls{display:flex;gap:6px;pointer-events:auto;flex-wrap:wrap;justify-content:flex-end}
+button{appearance:none;border:1px solid rgba(255,255,255,.18);color:white;background:rgba(20,23,30,.94);border-radius:10px;padding:9px 10px;font-size:11px;font-weight:700}
+button.active{outline:2px solid white;background:rgba(58,103,190,.95)}
+#status{position:fixed;z-index:90;top:max(88px,calc(env(safe-area-inset-top) + 80px));right:8px;width:min(500px,54vw);max-height:58vh;overflow:auto;padding:8px;pointer-events:none}
+#summary{font-variant-numeric:tabular-nums;font-size:10px;line-height:1.45;margin-bottom:5px}
+#compare{margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.12);font-size:10px;line-height:1.45}
+#log{margin:0;padding:0;list-style:none;font:9px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace}
 #log li{border-top:1px solid rgba(255,255,255,.08);padding:4px 0;word-break:break-all}
-#guide{position:fixed;z-index:15;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;color:rgba(255,255,255,.5);font-size:13px;line-height:1.5}
-#live{position:fixed;z-index:80;left:8px;bottom:max(8px,env(safe-area-inset-bottom));padding:7px 9px;max-width:74vw;pointer-events:none;font:11px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace}
-.marker{position:fixed;z-index:70;width:40px;height:40px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid white;display:grid;place-items:center;font:800 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace;pointer-events:none;box-shadow:0 0 0 2px rgba(0,0,0,.45)}
+#guide{position:fixed;z-index:15;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;color:rgba(255,255,255,.48);font-size:13px;line-height:1.5}
+#live{position:fixed;z-index:80;left:8px;bottom:max(8px,env(safe-area-inset-bottom));padding:7px 9px;max-width:78vw;pointer-events:none;font:10px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace}
+.marker{position:fixed;z-index:70;width:42px;height:42px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid white;display:grid;place-items:center;text-align:center;font:800 8px/1.05 ui-monospace,SFMono-Regular,Menlo,monospace;pointer-events:none;box-shadow:0 0 0 2px rgba(0,0,0,.45)}
 .down{background:rgba(60,145,255,.62)}
 .good{background:rgba(45,190,90,.64)}
 .warn{background:rgba(255,178,35,.68)}
@@ -41,49 +43,221 @@ button{appearance:none;border:1px solid rgba(255,255,255,.18);color:white;backgr
 </head>
 <body>
 <div id="top" class="edge"></div><div id="bottom" class="edge"></div><div id="left" class="edge"></div><div id="right" class="edge"></div>
+
 <div id="head">
-  <div id="info" class="panel"><strong>iPhone Touch Tester</strong><br>画面の任意位置を短くタップ。START → END/CANCEL と時間を記録します。<br>青=押下中 / 緑&lt;200ms / 黄200–500ms / 赤&gt;500ms / 紫=CANCEL</div>
-  <div id="controls"><button id="clear">クリア</button><button id="toggle">ログ</button></div>
+  <div id="info" class="panel">
+    <strong>iPhone Touch Tester v2</strong><br>
+    touchstart / move / end / cancel を追跡。最大移動距離、最大1イベント移動、総移動距離、move回数、接触半径/forceを記録します。
+  </div>
+  <div id="controls">
+    <button id="normalBtn" class="active">正常側</button>
+    <button id="problemBtn">問題側</button>
+    <button id="clearBtn">クリア</button>
+    <button id="toggleBtn">ログ</button>
+  </div>
 </div>
-<div id="status" class="panel"><div id="summary">まだ入力がありません。</div><ul id="log"></ul></div>
-<div id="guide">画面のどこでもタップできます<br>正常位置と問題の物理位置を10〜20回ずつ比較</div>
+
+<div id="status" class="panel">
+  <div id="summary">まだ入力がありません。</div>
+  <div id="compare"></div>
+  <ul id="log"></ul>
+</div>
+
+<div id="guide">
+  ① 正常側を選んで10〜20回タップ<br>
+  ② 問題側を選んで同じ回数タップ<br>
+  特に maxDisp / maxJump / moves を比較
+</div>
+
 <div id="live" class="panel">待機中</div>
+
 <script>
 (()=>{
 const active=new Map(), markers=new Map();
-const log=document.getElementById('log'), summary=document.getElementById('summary'), live=document.getElementById('live'), status=document.getElementById('status');
-let seq=0,done=0,cancelled=0,total=0,maxDur=0,maxLag=0;
-const f=n=>Number(n).toFixed(1);
-function add(s){const li=document.createElement('li');li.textContent=s;log.prepend(li);while(log.children.length>60)log.removeChild(log.lastChild)}
-function lag(e){const v=performance.now()-e.timeStamp;return Number.isFinite(v)&&Math.abs(v)<600000?v:null}
-function update(last=''){const avg=done?total/done:0;summary.innerHTML=`完了 <b>${done}</b> / CANCEL <b>${cancelled}</b><br>平均 <b>${f(avg)}ms</b> / 最大 <b>${f(maxDur)}ms</b><br>最大 dispatch 遅延 <b>${f(maxLag)}ms</b>${last?`<br>直近 <b>${last}</b>`:''}`}
-function markerStart(id,x,y){const m=document.createElement('div');m.className='marker down';m.style.left=x+'px';m.style.top=y+'px';m.textContent='DOWN';document.body.appendChild(m);markers.set(id,m)}
-function markerEnd(id,x,y,d,c){let m=markers.get(id);if(!m){m=document.createElement('div');document.body.appendChild(m)}m.style.left=x+'px';m.style.top=y+'px';m.className='marker '+(c?'cancel':d<200?'good':d<500?'warn':'bad');m.textContent=c?'CANCEL':Math.round(d)+'ms';markers.delete(id);setTimeout(()=>m.style.opacity='.35',1500);setTimeout(()=>m.remove(),6500)}
+const groups={
+  normal:{label:'正常',items:[]},
+  problem:{label:'問題',items:[]}
+};
+let selected='normal', seq=0;
+
+const log=document.getElementById('log');
+const summary=document.getElementById('summary');
+const compare=document.getElementById('compare');
+const live=document.getElementById('live');
+const status=document.getElementById('status');
+const normalBtn=document.getElementById('normalBtn');
+const problemBtn=document.getElementById('problemBtn');
+
+const f=n=>Number(n).toFixed(2);
+const dist=(x1,y1,x2,y2)=>Math.hypot(x2-x1,y2-y1);
+function touchInfo(t){
+  return {
+    radiusX:Number.isFinite(t.radiusX)?t.radiusX:null,
+    radiusY:Number.isFinite(t.radiusY)?t.radiusY:null,
+    force:Number.isFinite(t.force)?t.force:null
+  };
+}
+function add(s){
+  const li=document.createElement('li');
+  li.textContent=s;
+  log.prepend(li);
+  while(log.children.length>90)log.removeChild(log.lastChild);
+}
+function makeMarker(id,x,y){
+  const m=document.createElement('div');
+  m.className='marker down';
+  m.style.left=x+'px';m.style.top=y+'px';m.textContent='DOWN';
+  document.body.appendChild(m);markers.set(id,m);
+}
+function finishMarker(id,x,y,d,c,maxDisp){
+  let m=markers.get(id);
+  if(!m){m=document.createElement('div');document.body.appendChild(m)}
+  m.style.left=x+'px';m.style.top=y+'px';
+  m.className='marker '+(c?'cancel':maxDisp>8||d>500?'bad':maxDisp>4||d>250?'warn':'good');
+  m.textContent=c?'CANCEL':Math.round(d)+'ms\n'+f(maxDisp)+'px';
+  markers.delete(id);
+  setTimeout(()=>m.style.opacity='.35',1600);
+  setTimeout(()=>m.remove(),7000);
+}
+function stats(items){
+  const ended=items.filter(x=>!x.cancelled);
+  const n=ended.length;
+  const avg=k=>n?ended.reduce((s,x)=>s+(x[k]||0),0)/n:0;
+  const max=k=>n?Math.max(...ended.map(x=>x[k]||0)):0;
+  return {
+    n,
+    cancel:items.filter(x=>x.cancelled).length,
+    avgDur:avg('duration'),
+    avgDisp:avg('maxDisp'),
+    maxDisp:max('maxDisp'),
+    avgJump:avg('maxJump'),
+    maxJump:max('maxJump'),
+    avgMoves:avg('moves'),
+    avgPath:avg('path')
+  };
+}
+function render(){
+  const a=stats(groups.normal.items), b=stats(groups.problem.items);
+  summary.innerHTML =
+    '選択中: <b>'+(selected==='normal'?'正常側':'問題側')+'</b><br>'+
+    'タップ中は青 / 完了時に「時間 + 最大移動距離(px)」を表示';
+  compare.innerHTML =
+    '<b>A/B比較</b><br>'+
+    '正常: n='+a.n+' cancel='+a.cancel+
+      ' / dur='+f(a.avgDur)+'ms / maxDisp平均='+f(a.avgDisp)+'px (最大 '+f(a.maxDisp)+')'+
+      ' / maxJump平均='+f(a.avgJump)+'px / moves='+f(a.avgMoves)+' / path='+f(a.avgPath)+'px<br>'+
+    '問題: n='+b.n+' cancel='+b.cancel+
+      ' / dur='+f(b.avgDur)+'ms / maxDisp平均='+f(b.avgDisp)+'px (最大 '+f(b.maxDisp)+')'+
+      ' / maxJump平均='+f(b.avgJump)+'px / moves='+f(b.avgMoves)+' / path='+f(b.avgPath)+'px';
+}
 function ctrl(t){return !!t.closest?.('#controls')}
+function selectGroup(g){
+  selected=g;
+  normalBtn.classList.toggle('active',g==='normal');
+  problemBtn.classList.toggle('active',g==='problem');
+  render();
+}
+normalBtn.addEventListener('click',e=>{e.stopPropagation();selectGroup('normal')});
+problemBtn.addEventListener('click',e=>{e.stopPropagation();selectGroup('problem')});
+
 document.addEventListener('touchstart',e=>{
- if(ctrl(e.target))return;e.preventDefault();
- const dispatch=performance.now(),l=lag(e);if(l!==null)maxLag=Math.max(maxLag,l);
- for(const t of e.changedTouches){const n=++seq;active.set(t.identifier,{n,ts:e.timeStamp,dispatch,x:t.clientX,y:t.clientY});markerStart(t.identifier,t.clientX,t.clientY);add(`#${n} START x=${f(t.clientX)} y=${f(t.clientY)} evt=${f(e.timeStamp)} lag=${l===null?'?':f(l)}ms`);live.textContent=`DOWN #${n} x=${Math.round(t.clientX)} y=${Math.round(t.clientY)}`}
- update()
+  if(ctrl(e.target))return;
+  e.preventDefault();
+  for(const t of e.changedTouches){
+    const n=++seq;
+    const ti=touchInfo(t);
+    active.set(t.identifier,{
+      seq:n,group:selected,startTS:e.timeStamp,lastTS:e.timeStamp,
+      startX:t.clientX,startY:t.clientY,lastX:t.clientX,lastY:t.clientY,
+      maxDisp:0,maxJump:0,path:0,moves:0,
+      startRadiusX:ti.radiusX,startRadiusY:ti.radiusY,startForce:ti.force,
+      maxRadiusX:ti.radiusX??0,maxRadiusY:ti.radiusY??0,maxForce:ti.force??0
+    });
+    makeMarker(t.identifier,t.clientX,t.clientY);
+    add('#'+n+' START '+(selected==='normal'?'NORMAL':'PROBLEM')+
+      ' x='+f(t.clientX)+' y='+f(t.clientY)+
+      ' rx='+(ti.radiusX===null?'?':f(ti.radiusX))+
+      ' ry='+(ti.radiusY===null?'?':f(ti.radiusY))+
+      ' force='+(ti.force===null?'?':f(ti.force)));
+    live.textContent='DOWN #'+n+' '+(selected==='normal'?'正常':'問題')+
+      ' x='+Math.round(t.clientX)+' y='+Math.round(t.clientY);
+  }
 },{passive:false,capture:true});
-function finish(e,c){
- if(ctrl(e.target))return;e.preventDefault();
- const dispatch=performance.now(),l=lag(e);if(l!==null)maxLag=Math.max(maxLag,l);
- for(const t of e.changedTouches){const a=active.get(t.identifier);if(!a){add(`? ${c?'CANCEL':'END'} STARTなし`);continue}
- const d=e.timeStamp-a.ts,dd=dispatch-a.dispatch,dx=t.clientX-a.x,dy=t.clientY-a.y;
- if(c)cancelled++;else{done++;total+=d;maxDur=Math.max(maxDur,d)}
- markerEnd(t.identifier,t.clientX,t.clientY,d,c);
- add(`#${a.n} ${c?'CANCEL':'END'} evt=${f(d)}ms dispatch=${f(dd)}ms lagEnd=${l===null?'?':f(l)}ms start(${f(a.x)},${f(a.y)}) end(${f(t.clientX)},${f(t.clientY)}) move(${f(dx)},${f(dy)})`);
- live.textContent=`${c?'CANCEL':'END'} #${a.n} event=${f(d)}ms dispatch=${f(dd)}ms x=${Math.round(t.clientX)} y=${Math.round(t.clientY)}`;
- update(`${c?'CANCEL ':''}${f(d)}ms @ (${Math.round(t.clientX)}, ${Math.round(t.clientY)})`);active.delete(t.identifier)}
+
+document.addEventListener('touchmove',e=>{
+  if(ctrl(e.target))return;
+  e.preventDefault();
+  for(const t of e.changedTouches){
+    const a=active.get(t.identifier); if(!a)continue;
+    const jump=dist(a.lastX,a.lastY,t.clientX,t.clientY);
+    const disp=dist(a.startX,a.startY,t.clientX,t.clientY);
+    const ti=touchInfo(t);
+    a.moves++;
+    a.path+=jump;
+    a.maxJump=Math.max(a.maxJump,jump);
+    a.maxDisp=Math.max(a.maxDisp,disp);
+    a.lastX=t.clientX;a.lastY=t.clientY;a.lastTS=e.timeStamp;
+    if(ti.radiusX!==null)a.maxRadiusX=Math.max(a.maxRadiusX,ti.radiusX);
+    if(ti.radiusY!==null)a.maxRadiusY=Math.max(a.maxRadiusY,ti.radiusY);
+    if(ti.force!==null)a.maxForce=Math.max(a.maxForce,ti.force);
+    const m=markers.get(t.identifier);
+    if(m){m.style.left=t.clientX+'px';m.style.top=t.clientY+'px';m.textContent='MOVE\n'+f(a.maxDisp)+'px'}
+    live.textContent='MOVE #'+a.seq+
+      ' maxDisp='+f(a.maxDisp)+'px maxJump='+f(a.maxJump)+'px moves='+a.moves;
+  }
+},{passive:false,capture:true});
+
+function finish(e,cancelled){
+  if(ctrl(e.target))return;
+  e.preventDefault();
+  for(const t of e.changedTouches){
+    const a=active.get(t.identifier); if(!a){add('? END/CANCEL STARTなし');continue}
+    const finalJump=dist(a.lastX,a.lastY,t.clientX,t.clientY);
+    const finalDisp=dist(a.startX,a.startY,t.clientX,t.clientY);
+    a.path+=finalJump;
+    a.maxJump=Math.max(a.maxJump,finalJump);
+    a.maxDisp=Math.max(a.maxDisp,finalDisp);
+    const duration=e.timeStamp-a.startTS;
+    const ti=touchInfo(t);
+    const result={
+      seq:a.seq,cancelled,duration,
+      startX:a.startX,startY:a.startY,endX:t.clientX,endY:t.clientY,
+      finalDisp,maxDisp:a.maxDisp,maxJump:a.maxJump,path:a.path,moves:a.moves,
+      startRadiusX:a.startRadiusX,startRadiusY:a.startRadiusY,startForce:a.startForce,
+      endRadiusX:ti.radiusX,endRadiusY:ti.radiusY,endForce:ti.force,
+      maxRadiusX:a.maxRadiusX,maxRadiusY:a.maxRadiusY,maxForce:a.maxForce
+    };
+    groups[a.group].items.push(result);
+    finishMarker(t.identifier,t.clientX,t.clientY,duration,cancelled,a.maxDisp);
+    add('#'+a.seq+' '+(cancelled?'CANCEL':'END')+' '+(a.group==='normal'?'NORMAL':'PROBLEM')+
+      ' dur='+f(duration)+'ms finalDisp='+f(finalDisp)+'px maxDisp='+f(a.maxDisp)+
+      'px maxJump='+f(a.maxJump)+'px path='+f(a.path)+'px moves='+a.moves+
+      ' radiusMax='+f(a.maxRadiusX)+'x'+f(a.maxRadiusY)+
+      ' forceMax='+f(a.maxForce));
+    live.textContent=(cancelled?'CANCEL':'END')+' #'+a.seq+
+      ' dur='+f(duration)+'ms maxDisp='+f(a.maxDisp)+'px maxJump='+f(a.maxJump)+
+      'px moves='+a.moves;
+    active.delete(t.identifier);
+    render();
+  }
 }
 document.addEventListener('touchend',e=>finish(e,false),{passive:false,capture:true});
 document.addEventListener('touchcancel',e=>finish(e,true),{passive:false,capture:true});
-document.getElementById('clear').addEventListener('click',e=>{e.stopPropagation();active.clear();markers.forEach(m=>m.remove());markers.clear();document.querySelectorAll('.marker').forEach(m=>m.remove());log.innerHTML='';seq=done=cancelled=total=maxDur=maxLag=0;live.textContent='待機中';update()});
-document.getElementById('toggle').addEventListener('click',e=>{e.stopPropagation();status.style.display=status.style.display==='none'?'block':'none'});
+
+document.getElementById('clearBtn').addEventListener('click',e=>{
+  e.stopPropagation();
+  active.clear();markers.forEach(m=>m.remove());markers.clear();
+  document.querySelectorAll('.marker').forEach(m=>m.remove());
+  groups.normal.items=[];groups.problem.items=[];
+  log.innerHTML='';seq=0;live.textContent='待機中';render();
+});
+document.getElementById('toggleBtn').addEventListener('click',e=>{
+  e.stopPropagation();
+  status.style.display=status.style.display==='none'?'block':'none';
+});
 document.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});
 document.addEventListener('contextmenu',e=>e.preventDefault());
-update();
+render();
 })();
 </script>
 </body>
