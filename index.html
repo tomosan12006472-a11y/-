@@ -158,7 +158,7 @@ function selectGroup(g){
   render();
 }
 normalBtn.addEventListener('click',e=>{e.stopPropagation();selectGroup('normal')});
-problemBtn.addEventListener('click',e=>{e.stopPropagation();selectGroup('problem')});
+problemBtn.addEventListener('click',e=>{e.stopPropagation();selectGroup('problem')});\nalternateBtn.addEventListener('click',e=>{e.stopPropagation();alternate=!alternate;alternateBtn.classList.toggle('active',alternate);alternateBtn.textContent=alternate?'交互ON':'交互OFF';render()});
 
 document.addEventListener('touchstart',e=>{
   if(ctrl(e.target))return;
