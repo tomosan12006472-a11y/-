@@ -244,6 +244,21 @@ function finish(e,cancelled){
 document.addEventListener('touchend',e=>finish(e,false),{passive:false,capture:true});
 document.addEventListener('touchcancel',e=>finish(e,true),{passive:false,capture:true});
 
+document.getElementById('copyBtn').addEventListener('click',async e=>{
+  e.stopPropagation();
+  const a=stats(groups.normal.items), b=stats(groups.problem.items);
+  const recent=[...log.querySelectorAll('li')].slice(0,30).reverse().map(li=>li.textContent).join('\n');
+  const text=
+    'iPhone Touch Tester v2 result\n'+
+    'NORMAL n='+a.n+' cancel='+a.cancel+' avgDur='+f(a.avgDur)+'ms avgMaxDisp='+f(a.avgDisp)+'px maxMaxDisp='+f(a.maxDisp)+'px avgMaxJump='+f(a.avgJump)+'px maxMaxJump='+f(a.maxJump)+'px avgMoves='+f(a.avgMoves)+' avgPath='+f(a.avgPath)+'px\n'+
+    'PROBLEM n='+b.n+' cancel='+b.cancel+' avgDur='+f(b.avgDur)+'ms avgMaxDisp='+f(b.avgDisp)+'px maxMaxDisp='+f(b.maxDisp)+'px avgMaxJump='+f(b.avgJump)+'px maxMaxJump='+f(b.maxJump)+'px avgMoves='+f(b.avgMoves)+' avgPath='+f(b.avgPath)+'px\n\nRecent events:\n'+recent;
+  try{
+    await navigator.clipboard.writeText(text);
+    live.textContent='結果をクリップボードへコピーしました';
+  }catch(_){
+    window.prompt('結果をコピーしてください',text);
+  }
+});
 document.getElementById('clearBtn').addEventListener('click',e=>{
   e.stopPropagation();
   active.clear();markers.forEach(m=>m.remove());markers.clear();
