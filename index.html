@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#090b10">
+<title>iPhone Touch Tester</title>
+<style>
+:root{color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#090b10;color:#f5f7fb;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior:none;touch-action:none}
+body{background:
+linear-gradient(to right,rgba(255,255,255,.055) 1px,transparent 1px),
+linear-gradient(to bottom,rgba(255,255,255,.055) 1px,transparent 1px),#090b10;
+background-size:32px 32px}
+.panel{background:rgba(12,14,20,.84);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:12px}
+#head{position:fixed;z-index:100;top:max(8px,env(safe-area-inset-top));left:8px;right:8px;display:flex;justify-content:space-between;gap:8px;pointer-events:none}
+#info{padding:8px 10px;max-width:min(520px,72vw);font-size:11px;line-height:1.35}
+#info strong{font-size:13px}
+#controls{display:flex;gap:6px;pointer-events:auto}
+button{appearance:none;border:1px solid rgba(255,255,255,.18);color:white;background:rgba(20,23,30,.94);border-radius:10px;padding:9px 11px;font-size:11px;font-weight:700}
+#status{position:fixed;z-index:90;top:max(82px,calc(env(safe-area-inset-top) + 74px));right:8px;width:min(450px,50vw);max-height:52vh;overflow:auto;padding:8px;pointer-events:none}
+#summary{font-variant-numeric:tabular-nums;font-size:11px;line-height:1.45;margin-bottom:5px}
+#log{margin:0;padding:0;list-style:none;font:10px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace}
+#log li{border-top:1px solid rgba(255,255,255,.08);padding:4px 0;word-break:break-all}
+#guide{position:fixed;z-index:15;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;color:rgba(255,255,255,.5);font-size:13px;line-height:1.5}
+#live{position:fixed;z-index:80;left:8px;bottom:max(8px,env(safe-area-inset-bottom));padding:7px 9px;max-width:74vw;pointer-events:none;font:11px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace}
+.marker{position:fixed;z-index:70;width:40px;height:40px;transform:translate(-50%,-50%);border-radius:50%;border:2px solid white;display:grid;place-items:center;font:800 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace;pointer-events:none;box-shadow:0 0 0 2px rgba(0,0,0,.45)}
+.down{background:rgba(60,145,255,.62)}
+.good{background:rgba(45,190,90,.64)}
+.warn{background:rgba(255,178,35,.68)}
+.bad{background:rgba(235,65,65,.70)}
+.cancel{background:rgba(180,70,230,.72)}
+.edge{position:fixed;z-index:5;pointer-events:none;border-color:rgba(255,255,255,.24);border-style:dashed}
+#bottom{bottom:0;left:0;right:0;height:36px;border-width:1px 0 0 0}
+#top{top:0;left:0;right:0;height:36px;border-width:0 0 1px 0}
+#left{left:0;top:0;bottom:0;width:36px;border-width:0 1px 0 0}
+#right{right:0;top:0;bottom:0;width:36px;border-width:0 0 0 1px}
+</style>
+</head>
+<body>
+<div id="top" class="edge"></div><div id="bottom" class="edge"></div><div id="left" class="edge"></div><div id="right" class="edge"></div>
+<div id="head">
+  <div id="info" class="panel"><strong>iPhone Touch Tester</strong><br>画面の任意位置を短くタップ。START → END/CANCEL と時間を記録します。<br>青=押下中 / 緑&lt;200ms / 黄200–500ms / 赤&gt;500ms / 紫=CANCEL</div>
+  <div id="controls"><button id="clear">クリア</button><button id="toggle">ログ</button></div>
+</div>
+<div id="status" class="panel"><div id="summary">まだ入力がありません。</div><ul id="log"></ul></div>
+<div id="guide">画面のどこでもタップできます<br>正常位置と問題の物理位置を10〜20回ずつ比較</div>
+<div id="live" class="panel">待機中</div>
+<script>
+(()=>{
+const active=new Map(), markers=new Map();
+const log=document.getElementById('log'), summary=document.getElementById('summary'), live=document.getElementById('live'), status=document.getElementById('status');
+let seq=0,done=0,cancelled=0,total=0,maxDur=0,maxLag=0;
+const f=n=>Number(n).toFixed(1);
+function add(s){const li=document.createElement('li');li.textContent=s;log.prepend(li);while(log.children.length>60)log.removeChild(log.lastChild)}
+function lag(e){const v=performance.now()-e.timeStamp;return Number.isFinite(v)&&Math.abs(v)<600000?v:null}
+function update(last=''){const avg=done?total/done:0;summary.innerHTML=`完了 <b>${done}</b> / CANCEL <b>${cancelled}</b><br>平均 <b>${f(avg)}ms</b> / 最大 <b>${f(maxDur)}ms</b><br>最大 dispatch 遅延 <b>${f(maxLag)}ms</b>${last?`<br>直近 <b>${last}</b>`:''}`}
+function markerStart(id,x,y){const m=document.createElement('div');m.className='marker down';m.style.left=x+'px';m.style.top=y+'px';m.textContent='DOWN';document.body.appendChild(m);markers.set(id,m)}
+function markerEnd(id,x,y,d,c){let m=markers.get(id);if(!m){m=document.createElement('div');document.body.appendChild(m)}m.style.left=x+'px';m.style.top=y+'px';m.className='marker '+(c?'cancel':d<200?'good':d<500?'warn':'bad');m.textContent=c?'CANCEL':Math.round(d)+'ms';markers.delete(id);setTimeout(()=>m.style.opacity='.35',1500);setTimeout(()=>m.remove(),6500)}
+function ctrl(t){return !!t.closest?.('#controls')}
+document.addEventListener('touchstart',e=>{
+ if(ctrl(e.target))return;e.preventDefault();
+ const dispatch=performance.now(),l=lag(e);if(l!==null)maxLag=Math.max(maxLag,l);
+ for(const t of e.changedTouches){const n=++seq;active.set(t.identifier,{n,ts:e.timeStamp,dispatch,x:t.clientX,y:t.clientY});markerStart(t.identifier,t.clientX,t.clientY);add(`#${n} START x=${f(t.clientX)} y=${f(t.clientY)} evt=${f(e.timeStamp)} lag=${l===null?'?':f(l)}ms`);live.textContent=`DOWN #${n} x=${Math.round(t.clientX)} y=${Math.round(t.clientY)}`}
+ update()
+},{passive:false,capture:true});
+function finish(e,c){
+ if(ctrl(e.target))return;e.preventDefault();
+ const dispatch=performance.now(),l=lag(e);if(l!==null)maxLag=Math.max(maxLag,l);
+ for(const t of e.changedTouches){const a=active.get(t.identifier);if(!a){add(`? ${c?'CANCEL':'END'} STARTなし`);continue}
+ const d=e.timeStamp-a.ts,dd=dispatch-a.dispatch,dx=t.clientX-a.x,dy=t.clientY-a.y;
+ if(c)cancelled++;else{done++;total+=d;maxDur=Math.max(maxDur,d)}
+ markerEnd(t.identifier,t.clientX,t.clientY,d,c);
+ add(`#${a.n} ${c?'CANCEL':'END'} evt=${f(d)}ms dispatch=${f(dd)}ms lagEnd=${l===null?'?':f(l)}ms start(${f(a.x)},${f(a.y)}) end(${f(t.clientX)},${f(t.clientY)}) move(${f(dx)},${f(dy)})`);
+ live.textContent=`${c?'CANCEL':'END'} #${a.n} event=${f(d)}ms dispatch=${f(dd)}ms x=${Math.round(t.clientX)} y=${Math.round(t.clientY)}`;
+ update(`${c?'CANCEL ':''}${f(d)}ms @ (${Math.round(t.clientX)}, ${Math.round(t.clientY)})`);active.delete(t.identifier)}
+}
+document.addEventListener('touchend',e=>finish(e,false),{passive:false,capture:true});
+document.addEventListener('touchcancel',e=>finish(e,true),{passive:false,capture:true});
+document.getElementById('clear').addEventListener('click',e=>{e.stopPropagation();active.clear();markers.forEach(m=>m.remove());markers.clear();document.querySelectorAll('.marker').forEach(m=>m.remove());log.innerHTML='';seq=done=cancelled=total=maxDur=maxLag=0;live.textContent='待機中';update()});
+document.getElementById('toggle').addEventListener('click',e=>{e.stopPropagation();status.style.display=status.style.display==='none'?'block':'none'});
+document.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});
+document.addEventListener('contextmenu',e=>e.preventDefault());
+update();
+})();
+</script>
+</body>
+</html>
